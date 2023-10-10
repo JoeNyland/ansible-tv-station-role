@@ -1,0 +1,12 @@
+---
+- name: Reboot
+  reboot:
+
+- name: Reload systemd
+  systemd:
+    daemon_reload: true
+
+- name: Restart TV Station service
+  service:
+    name: tv-station
+    state: restarted

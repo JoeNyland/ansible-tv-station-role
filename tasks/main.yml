@@ -1,0 +1,69 @@
+---
+- name: Setup TV station
+  tags: tv-station
+  block:
+    - name: Enable composite video out
+      ini_file:
+        path: /boot/firmware/config.txt
+        option: dtoverlay
+        value: vc4-kms-v3d,composite
+        no_extra_spaces: true
+        mode: '0755'
+      notify:
+        - Reboot
+
+    - name: Enable TV out and set mode
+      ini_file:
+        path: /boot/firmware/config.txt
+        section: all
+        option: "{{ item.key }}"
+        value: "{{ item.value }}"
+        no_extra_spaces: true
+        mode: '0755'
+      with_dict:
+        enable_tvout: 1
+        sdtv_mode: 2
+      notify:
+        - Reboot
+
+    - name: Set TV out mode
+      replace:
+        path: /boot/firmware/cmdline.txt
+        regexp: '^([\w](?!.*\b{{ item }}\b).*)$'
+        replace: '\1 {{ item }}'
+      with_items:
+        - vc4.tv_norm=PAL
+      notify:
+        - Reboot
+
+    - name: Reboot if required
+      meta: flush_handlers
+
+    - name: Install VLC
+      apt:
+        name: vlc
+
+    - name: Mount tank
+      mount:
+        src: server:/tank
+        path: /tank
+        fstype: nfs
+        state: mounted
+        opts: ro
+
+    - name: Create service
+      template:
+        dest: /lib/systemd/system/tv-station.service
+        src: tv-station.service.j2
+        owner: root
+        group: root
+        mode: 0644
+      notify:
+        - Reload systemd
+        - Restart TV Station service
+
+    - name: Configure service
+      service:
+        name: tv-station
+        state: started
+        enabled: true

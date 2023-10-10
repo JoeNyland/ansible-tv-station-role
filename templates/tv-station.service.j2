@@ -1,0 +1,13 @@
+[Unit]
+Description=TV Station
+Requires=tank.mount
+After=network.target tank.mount
+
+[Service]
+ExecStart=/usr/bin/cvlc --random --loop --no-interact --no-spu --no-osd "{{tv_station_media_location}}"
+Restart=on-success
+User={{tv_station_user}}
+Group={{tv_station_group}}
+
+[Install]
+WantedBy=multi-user.target
